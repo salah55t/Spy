@@ -17,33 +17,15 @@ for i in {1..15}; do
     sleep 1
 done
 
-# 3. تهيئة Wine (مرة واحدة)
-echo "Initializing Wine..."
-wineboot -u 2>&1 | tee /app/wineboot.log
-sleep 3
-
-# 4. تشغيل Fluxbox و x11vnc
+# 3. تشغيل Fluxbox و x11vnc (بدون انتظار Wine)
 fluxbox &
 x11vnc -forever -shared -nopw -display :1 -rfbport 5900 -bg -o /app/x11vnc.log
 sleep 2
 
-# 5. التحقق من وجود ملف SpyNote.exe وعرض محتويات المجلد
-echo "Contents of /app:"
-ls -la /app
+# 4. تشغيل Wine في الخلفية (حتى لو فشل)
+echo "Attempting to start SpyNote.exe in background..."
+wine /app/SpyNote.exe 2>&1 | tee /app/wine.log &
 
-# 6. محاولة تشغيل SpyNote (إذا وجد)
-if [ -f "/app/SpyNote.exe" ]; then
-    echo "SpyNote.exe found, starting..."
-    wine /app/SpyNote.exe 2>&1 | tee /app/wine.log &
-else
-    echo "WARNING: SpyNote.exe not found. Checking for other .exe files..."
-    find /app -name "*.exe" -exec echo "Found: {}" \;
-fi
-
-# 7. بدء noVNC (دائمًا، بغض النظر عن نجاح SpyNote)
+# 5. بدء noVNC فوراً (هذا هو المهم لـ Render)
 echo "Starting websockify on port 10000..."
-websockify --web /usr/share/novnc/ 10000 localhost:5900 &
-
-# 8. الحفاظ على الحاوية نشطة
-echo "Container is running. Press Ctrl+C to stop."
-sleep infinity
+websockify --web /usr/share/novnc/ 10000 localhost:5900
