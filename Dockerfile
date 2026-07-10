@@ -5,23 +5,23 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN dpkg --add-architecture i386 && \
     apt-get update && apt-get install -y \
     xvfb x11vnc novnc websockify fluxbox \
-    wine32 wine64 winetricks curl gnupg unzip \
-    sudo && rm -rf /var/lib/apt/lists/*
+    wine32 wine64 wine-binfmt \
+    curl gnupg unzip net-tools \
+    && rm -rf /var/lib/apt/lists/*
 
-# إنشاء مستخدم غير جذر
-RUN useradd -m -s /bin/bash wineuser && \
-    echo "wineuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# تثبيت wine-mono (بديل .NET المدمج)
+RUN apt-get install -y wine-mono && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# انسخ الملف المضغوط (تأكد من الاسم الصحيح)
 COPY SpyNote.zip /app/app.zip
 RUN unzip app.zip && rm app.zip
 
+# انسخ سكربت البدء
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh && \
-    chown -R wineuser:wineuser /app
+RUN chmod +x /app/start.sh
 
-USER wineuser
 EXPOSE 10000
 
 CMD ["/app/start.sh"]
