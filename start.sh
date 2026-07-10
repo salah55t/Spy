@@ -1,25 +1,21 @@
-FROM ubuntu:22.04
+#!/bin/bash
+rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
 
-ENV DEBIAN_FRONTEND=noninteractive
+Xvfb :1 -screen 0 1024x768x16 &
+export DISPLAY=:1
 
-RUN dpkg --add-architecture i386 && \
-    apt-get update && apt-get install -y \
-    xvfb x11vnc novnc websockify fluxbox \
-    wine32 wine64 wine-binfmt \
-    curl gnupg unzip net-tools \
-    && rm -rf /var/lib/apt/lists/*
+for i in {1..10}; do
+    xdpyinfo -display :1 >/dev/null 2>&1 && break
+    sleep 1
+done
 
-# تثبيت wine-mono (بديل .NET المفتوح المصدر)
-RUN apt-get install -y wine-mono && rm -rf /var/lib/apt/lists/*
+fluxbox &
+x11vnc -forever -shared -nopw -display :1 -rfbport 5900 -bg -o /app/x11vnc.log
 
-WORKDIR /app
+# لا حاجة لـ winetricks الآن
+# winetricks -q dotnet40 2>&1 | tee /app/winetricks.log
 
-COPY SpyNote.zip /app/app.zip
-RUN unzip app.zip && rm app.zip
+# تشغيل SpyNote مع سطح مكتب افتراضي
+wine explorer /desktop=spynote,1024x768 /app/SpyNote.exe 2>&1 | tee /app/wine.log &
 
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-EXPOSE 10000
-
-CMD ["/app/start.sh"]
+websockify --web /usr/share/novnc/ 10000 localhost:5900
